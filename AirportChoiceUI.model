@@ -1,0 +1,345 @@
+// Last modified: Tue Oct 06 15:24:04 2015
+// 
+// GISDK Model - TransCAD Version 6 Build 9085
+// 
+
+Macro "Model.FlowChart" (Args)
+Attributes:
+   Macro.[PicturePosition] = "TopRight"
+   Macro.[Position] = { 50, 50 }
+   Macro.[Size] = { 200, 80 }
+Description:
+//    PANYNJ Airport Choice Model
+Body:
+    // model = FlowChart( { StartNodes } , { EndNodes } , Description)
+    model = FlowChart({ "Level 1-4 Weighting" },{ "Run Java Model" },)
+    //
+    // Nodes
+    //
+    // FlowChartNode(model,NodeName,MacroName,UI,Description)
+    //
+    FlowChartNode(model,"Level 1-4 Weighting",,,)
+    FlowChartNode(model,"Skimming",,,)
+    FlowChartNode(model,"Create Java Inputs",,,)
+    FlowChartNode(model,"Run Java Model",,,)
+    //
+    // Links
+    //
+    // FlowChartLink(model , FromNode , ToNode , Condition , Description , IsFeedbackLoop)
+    //
+    FlowChartLink(model,"Level 1-4 Weighting","Skimming",True,,)
+    FlowChartLink(model,"Skimming","Create Java Inputs",True,,)
+    FlowChartLink(model,"Create Java Inputs","Run Java Model",True,,)
+    Return(model)
+EndMacro
+
+
+Macro "Model.Parameters" (Args,Result)
+Body:
+// 
+//  Args.[parameter_name] = As(parameter_type,{ initial_value },description,join_to_other_parameter,display_theme_name)
+// 
+    Args.[Application Version] = As("double",{6},"TransCAD Full 6 Build 9085")
+    Args.[Base Directory] = As("Folder",{null},"Scenario base folder. Must be a full path.")
+    Args.[Disable Steps] = As("array",{{ null }},"List of disabled step names for each scenario")
+    Args.[BatchMode] = As("boolean",{True},"Requires TransCAD Batch Macro Environment (TCB)")
+    Args.[Exit] = As("boolean",{null},"A step can set it to True and the model will stop running.")
+    Args.[ExitMessage] = As("string",{"OK"},"Diagnostic error message.")
+    Args.[Iteration] = As("int",{1},"Iteration number. Use it to run this model multiple times.")
+    Args.[Log File] = As("string",{"Scenario_Log.xml"},"Scenario log file (XML)")
+    Args.[MaxIterations] = As("int",{1},"Maximum number of iterations that this model can run.")
+    Args.[Report File] = As("string",{"Scenario_Report.xml"},"Scenario report file (XML).")
+    Args.[RunInIterations] = As("array",{{ null }},"Option array listing step names and what iteration they run in each scenario")
+    Args.[Weighting Years] = As("array",{{ "15", "20", "25", "30" }},"List of future years for which weighting procedure will be run. Data must exists for all years listed.")
+    Args.[NonResidentIncomeGrowth] = As("array",{{ 1.014847, 1.041005, 1.067139, 1.096025 }},"Income-driven growth factors for nonresidents. Corresponds to Future Years.")
+    Args.[NonResidentSEDGrowth] = As("array",{{ 1.15, 1.2, 1.3, 1.4 }},"SED-driven growth factors for nonresidents. Corresponds to Future Years.")
+    Args.[Base Year] = As("double",{2010},"Model Base Year")
+    Args.[Build Year] = As("double",{2030},"Model Build Year")
+    
+    // Input and Output Files
+    Args.[File Survey In] = As("constant",{"..\\..\\0_Param\\1_Data\\AIRPAX_SURVEY_2010.csv"},,"no","Survey In File")
+    Args.[File SED Data] = As("File",{"1_Inputs\\1_Weighting\\SED_COUNTY.DBF"})
+    Args.[File Enplnmt Forecasts] = As("File",{"1_Inputs\\1_Weighting\\Enplanement_Forecasts.csv"})
+    Args.[File Base Income] = As("constant",{"..\\..\\0_Param\\1_Data\\Base_Years_Income_Data.csv"},,"no","Base Years Income")
+    Args.[File Income LU] = As("constant",{"..\\..\\0_Param\\2_LUT\\Income_Lookup.csv"},,"no","Income Lookup Table")
+    Args.[File Hotel Data] = As("constant",{"..\\..\\0_Param\\2_LUT\\HOTEL_RM_CTY.dbf"},,"no","Base Hotel Room Data")
+    Args.[File Hotel Coeff] = As("constant",{"..\\..\\0_Param\\2_LUT\\Hotel_Regression_Coeff.csv"},,"no","Hotel Room Regression Coefficients")
+    Args.[File Survey L1] = As("File",{"2_Outputs\\1_Weights\\AIRPAX_Survey_Level_1.csv"})
+    Args.[File Survey L2] = As("File",{"2_Outputs\\1_Weights\\AIRPAX_Survey_Level_2.csv"})
+    Args.[File Survey L3] = As("File",{"2_Outputs\\1_Weights\\AIRPAX_Survey_Level_3.csv"})
+    Args.[File Survey L4] = As("File",{"2_Outputs\\1_Weights\\AIRPAX_Survey_Level_4.csv"})
+    
+    Args.[File Base Merged Net] = As("File",{"1_Inputs\\3_Geog\\Base\\FullMerged_Network.dbd"})
+    Args.[File Build Merged Net] = As("File",{"1_Inputs\\3_Geog\\Build\\FullMerged_Network.dbd"})
+    Args.[File Base THTDFM AM Net] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\AM\\AM_bus.dbd"})
+    Args.[File Base THTDFM AM Dir] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\AM\\AM_Link_Dir.dbf"})
+    Args.[File Base THTDFM AM HASN] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\2_HASN\\assn_am_bus.bin"})
+    Args.[File Base THTDFM MD Net] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\MD\\MD_bus.dbd"})
+    Args.[File Base THTDFM MD Dir] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\MD\\MD_Link_Dir.dbf"})
+    Args.[File Base THTDFM MD HASN] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\2_HASN\\assn_MD_bus.bin"})
+    Args.[File Base THTDFM PM Net] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\PM\\PM_bus.dbd"})
+    Args.[File Base THTDFM PM Dir] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\PM\\PM_Link_Dir.dbf"})
+    Args.[File Base THTDFM PM HASN] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\2_HASN\\assn_pm_bus.bin"})
+    Args.[File Base THTDFM NT Net] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\NT\\NT_bus.dbd"})
+    Args.[File Base THTDFM NT Dir] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\1_HNet\\NT\\NT_Link_Dir.dbf"})
+    Args.[File Base THTDFM NT HASN] = As("File",{"1_Inputs\\2_Skims\\Base\\1_Hwy\\2_HASN\\assn_nt_bus.bin"})
+    Args.[File Build THTDFM AM Net] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\AM\\AM_bus.dbd"})
+    Args.[File Build THTDFM AM Dir] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\AM\\AM_Link_Dir.dbf"})
+    Args.[File Build THTDFM AM HASN] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\2_HASN\\assn_am_bus.bin"})
+    Args.[File Build THTDFM MD Net] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\MD\\MD_bus.dbd"})
+    Args.[File Build THTDFM MD Dir] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\MD\\MD_Link_Dir.dbf"})
+    Args.[File Build THTDFM MD HASN] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\2_HASN\\assn_MD_bus.bin"})
+    Args.[File Build THTDFM PM Net] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\PM\\PM_bus.dbd"})
+    Args.[File Build THTDFM PM Dir] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\PM\\PM_Link_Dir.dbf"})
+    Args.[File Build THTDFM PM HASN] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\2_HASN\\assn_pm_bus.bin"})
+    Args.[File Build THTDFM NT Net] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\NT\\NT_bus.dbd"})
+    Args.[File Build THTDFM NT Dir] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\1_HNet\\NT\\NT_Link_Dir.dbf"})
+    Args.[File Build THTDFM NT HASN] = As("File",{"1_Inputs\\2_Skims\\Build\\1_Hwy\\2_HASN\\assn_nt_bus.bin"})
+    
+    Args.[File Base TAZZIP] = As("File",{"1_Inputs\\2_Skims\\Base\\3_SED\\TAZ_to_Zip.dbf"})
+    Args.[File Build TAZZIP] = As("File",{"1_Inputs\\2_Skims\\Build\\3_SED\\TAZ_to_Zip.dbf"})
+    
+	Args.[File Base Trn AM DC In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TAMDCB.mtx"})
+	Args.[File Base Trn MD DC In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TMDDCB.mtx"})
+	Args.[File Base Trn AM DS In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TAMDSB.mtx"})
+	Args.[File Base Trn MD DS In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TMDDSB.mtx"})
+	Args.[File Base Trn AM WC In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TAMWCB.mtx"})
+	Args.[File Base Trn MD WC In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TMDWCB.mtx"})
+	Args.[File Base Trn AM WS In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TAMWSB.mtx"})
+	Args.[File Base Trn MD WS In] = As("File",{"1_Inputs\\2_Skims\\Base\\2_Trn\\TMDWSB.mtx"})
+	Args.[File Build Trn AM DC In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TAMDCB.mtx"})
+	Args.[File Build Trn MD DC In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TMDDCB.mtx"})
+	Args.[File Build Trn AM DS In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TAMDSB.mtx"})
+	Args.[File Build Trn MD DS In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TMDDSB.mtx"})
+	Args.[File Build Trn AM WC In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TAMWCB.mtx"})
+	Args.[File Build Trn MD WC In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TMDWCB.mtx"})
+	Args.[File Build Trn AM WS In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TAMWSB.mtx"})
+	Args.[File Build Trn MD WS In] = As("File",{"1_Inputs\\2_Skims\\Build\\2_Trn\\TMDWSB.mtx"})
+    
+    Args.[File Base Hwy AM Skim] = As("File",{"2_Outputs\\2_Skims\\Base\\1_Hwy\\AM_Skim_All_Areas.dbf"})
+    Args.[File Base Hwy MD Skim] = As("File",{"2_Outputs\\2_Skims\\Base\\1_Hwy\\MD_Skim_All_Areas.dbf"})
+    Args.[File Base Hwy PM Skim] = As("File",{"2_Outputs\\2_Skims\\Base\\1_Hwy\\PM_Skim_All_Areas.dbf"})
+    Args.[File Base Hwy NT Skim] = As("File",{"2_Outputs\\2_Skims\\Base\\1_Hwy\\NT_Skim_All_Areas.dbf"})    
+    Args.[File Build Hwy AM Skim] = As("File",{"2_Outputs\\2_Skims\\Build\\1_Hwy\\AM_Skim_All_Areas.dbf"})
+    Args.[File Build Hwy MD Skim] = As("File",{"2_Outputs\\2_Skims\\Build\\1_Hwy\\MD_Skim_All_Areas.dbf"})
+    Args.[File Build Hwy PM Skim] = As("File",{"2_Outputs\\2_Skims\\Build\\1_Hwy\\PM_Skim_All_Areas.dbf"})
+    Args.[File Build Hwy NT Skim] = As("File",{"2_Outputs\\2_Skims\\Build\\1_Hwy\\NT_Skim_All_Areas.dbf"})
+    
+	Args.[File Base Trn AM Skim] = As("File",{"2_Outputs\\2_Skims\\Base\\2_Trn\\AM_ZIP_INFIELDS.dbf"})
+    Args.[File Base Trn MD Skim] = As("File",{"2_Outputs\\2_Skims\\Base\\2_Trn\\MD_ZIP_INFIELDS.dbf"})
+    Args.[File Build Trn AM Skim] = As("File",{"2_Outputs\\2_Skims\\Build\\2_Trn\\AM_ZIP_INFIELDS.dbf"})
+    Args.[File Build Trn MD Skim] = As("File",{"2_Outputs\\2_Skims\\Build\\2_Trn\\MD_ZIP_INFIELDS.dbf"})
+    
+    
+    Args.[File ZipCorrection] =  As("constant",{"..\\..\\0_Param\\2_LUT\\ZIPcode.csv"},,"no","ZipCode Correction LU")
+    Args.[File RiverXing] =  As("constant",{"..\\..\\0_Param\\2_LUT\\River_Crossings.csv"},,"no","River Crossings LU")
+    
+    Args.[File Base Apt Data] =  As("File",{"1_Inputs\\4_Airport_Data\\Airport_Data_base.csv"})
+    Args.[File Build Apt Data] =  As("File",{"1_Inputs\\4_Airport_Data\\Airport_Data_build.csv"})
+    Args.[File Base Apt Yld] =  As("File",{"1_Inputs\\4_Airport_Data\\Airport_Yield_base.csv"})
+    Args.[File Base Apt Yld] =  As("File",{"1_Inputs\\4_Airport_Data\\Airport_Yield_build.csv"})
+    
+    Args.[File Base1] =  As("File",{"2_Outputs\\3_Switching_Model\\1_In\\base_business.csv"})
+    Args.[File Build1] =  As("File",{"2_Outputs\\3_Switching_Model\\1_In\\build_business.csv"})
+    Args.[File Base2] =  As("File",{"2_Outputs\\3_Switching_Model\\1_In\\base_nonbusiness.csv"})
+    Args.[File Build2] =  As("File",{"2_Outputs\\3_Switching_Model\\1_In\\build_nonbusiness.csv"})
+    
+	Args.[File Out1] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\out_business.csv"})
+    Args.[File Out2] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\out_2.csv"})
+    Args.[File BaseProb1] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\base_probabilities_business.csv"})
+    Args.[File BaseProb2] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\base_probabilities_nonbusiness.csv"})
+    Args.[File AptMode1] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\airport_mode_summary_business.csv"})
+    Args.[File AptMode2] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\airport_mode_summary_nonbusiness.csv"})
+    Args.[File AptOrig1] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\airport_origin_summary_business.csv"})
+    Args.[File AptOrig2] =  As("File",{"2_Outputs\\3_Switching_Model\\2_Out\\airport_origin_summary_nonbusiness.csv"})
+    
+Return(Args)
+EndMacro
+
+
+Macro "Level 1-4 Weighting" (Args,Result)
+Attributes:
+   Macro.[Position] = { 50, 150 }
+   Macro.[TextStyle] = "Center"
+Description:
+//    Level 1-4 Weighting Description
+Data:
+    In({ Args.[Weighting Years] })
+    In({ Args.[NonResidentIncomeGrowth] })
+    In({ Args.[NonResidentSEDGrowth] })
+    In({ Args.[File Survey In] })
+    In({ Args.[File SED Data] })
+    In({ Args.[File Enplnmt Forecasts] })
+    In({ Args.[File Base Income] })
+    In({ Args.[File Enplnmt Forecasts] })
+    In({ Args.[File Income LU] })
+    In({ Args.[File Hotel Data] })
+    In({ Args.[File Hotel Coeff] })
+    Out({ Args.[File Survey L1] })
+    Out({ Args.[File Survey L2] })
+    Out({ Args.[File Survey L3] })
+    Out({ Args.[File Survey L4] })
+Body:
+    RunMacro("SetLibrary", "airportchoicecompile")
+    ret = RunMacro("Weighting Main", Args, Result)
+    Return(ret)
+EndMacro
+
+
+Macro "Skimming" (Args,Result)
+Attributes:
+   Macro.[Position] = { 50, 230 }
+   Macro.[TextStyle] = "Center"
+Description:
+//    Skimming Description
+Data:
+    In({ Args.[Base Year] })
+    In({ Args.[Build Year] })
+    In({ Args.[File Base Merged Net]     }) 
+    In({ Args.[File Build Merged Net]    }) 
+    In({ Args.[File Base THTDFM AM Net]  }) 
+    In({ Args.[File Base THTDFM AM Dir]  }) 
+    In({ Args.[File Base THTDFM AM HASN] }) 
+    In({ Args.[File Base THTDFM MD Net]  }) 
+    In({ Args.[File Base THTDFM MD Dir]  }) 
+    In({ Args.[File Base THTDFM MD HASN] }) 
+    In({ Args.[File Base THTDFM PM Net]  }) 
+    In({ Args.[File Base THTDFM PM Dir]  }) 
+    In({ Args.[File Base THTDFM PM HASN] }) 
+    In({ Args.[File Base THTDFM NT Net]  }) 
+    In({ Args.[File Base THTDFM NT Dir]  }) 
+    In({ Args.[File Base THTDFM NT HASN] }) 
+    In({ Args.[File Build THTDFM AM Net] }) 
+    In({ Args.[File Build THTDFM AM Dir] }) 
+    In({ Args.[File Build THTDFM AM HASN]}) 
+    In({ Args.[File Build THTDFM MD Net] }) 
+    In({ Args.[File Build THTDFM MD Dir] }) 
+    In({ Args.[File Build THTDFM MD HASN]}) 
+    In({ Args.[File Build THTDFM PM Net] }) 
+    In({ Args.[File Build THTDFM PM Dir] }) 
+    In({ Args.[File Build THTDFM PM HASN]}) 
+    In({ Args.[File Build THTDFM NT Net] }) 
+    In({ Args.[File Build THTDFM NT Dir] }) 
+    In({ Args.[File Build THTDFM NT HASN]}) 
+    In({ Args.[File Base Trn AM DC In] })
+	In({ Args.[File Base Trn MD DC In] })
+	In({ Args.[File Base Trn AM DS In] })
+	In({ Args.[File Base Trn MD DS In] })
+	In({ Args.[File Base Trn AM WC In] })
+	In({ Args.[File Base Trn MD WC In] })
+	In({ Args.[File Base Trn AM WS In] })
+	In({ Args.[File Base Trn MD WS In] })
+	In({ Args.[File Build Trn AM DC In]})
+	In({ Args.[File Build Trn MD DC In]})
+	In({ Args.[File Build Trn AM DS In]})
+	In({ Args.[File Build Trn MD DS In]})
+	In({ Args.[File Build Trn AM WC In]})
+	In({ Args.[File Build Trn MD WC In]})
+	In({ Args.[File Build Trn AM WS In]})
+	In({ Args.[File Build Trn MD WS In]})
+	In({ Args.[File Base TAZZIP]})
+	In({ Args.[File Build TAZZIP]})
+	
+	
+
+   Out({ Args.[File Base Hwy AM Skim]     }) 
+   Out({ Args.[File Base Hwy MD Skim]     }) 
+   Out({ Args.[File Base Hwy PM Skim]     }) 
+   Out({ Args.[File Base Hwy NT Skim]     }) 
+   Out({ Args.[File Build Hwy AM Skim]    }) 
+   Out({ Args.[File Build Hwy MD Skim]    }) 
+   Out({ Args.[File Build Hwy PM Skim]    }) 
+   Out({ Args.[File Build Hwy NT Skim]    }) 
+   Out({ Args.[File Base Trn AM Skim] }) 
+   Out({ Args.[File Base Trn MD Skim] }) 
+   Out({ Args.[File Build Trn AM Skim]}) 
+   Out({ Args.[File Build Trn MD Skim]}) 
+
+
+Body:
+    RunMacro("SetLibrary", "airportchoicecompile")
+    ret = RunMacro("Skims Main", Args, Result)
+    Return(ret)
+EndMacro
+
+
+Macro "Create Java Inputs" (Args,Result)
+Attributes:
+   Macro.[Position] = { 50, 310 }
+   Macro.[TextStyle] = "Center"
+Description:
+//    Create Java Inputs Description
+Data:
+    In({ Args.[File Survey L4] })
+    In({ Args.[File Base Hwy AM Skim]     }) 
+    In({ Args.[File Base Hwy MD Skim]     }) 
+    In({ Args.[File Base Hwy PM Skim]     }) 
+    In({ Args.[File Base Hwy NT Skim]     }) 
+    In({ Args.[File Build Hwy AM Skim]    }) 
+    In({ Args.[File Build Hwy MD Skim]    }) 
+    In({ Args.[File Build Hwy PM Skim]    }) 
+    In({ Args.[File Build Hwy NT Skim]    }) 
+    In({ Args.[File Base Trn AM Skim] }) 
+    In({ Args.[File Base Trn MD Skim] }) 
+    In({ Args.[File Build Trn AM Skim]}) 
+    In({ Args.[File Build Trn MD Skim]}) 
+    In({ Args.[File ZipCorrection]}) 
+    In({ Args.[File RiverXing]}) 
+	In({ Args.[File Base Apt Data] })
+	In({ Args.[File Build Apt Data]})
+	In({ Args.[File Base Apt Yld]  })
+	In({ Args.[File Base Apt Yld]  })
+	
+	Out({ Args.[File Base1] })  
+	Out({ Args.[File Build1] })  
+	Out({ Args.[File Base2] })  
+	Out({ Args.[File Build2] })    
+   
+Body:
+    RunMacro("SetLibrary", "airportchoicecompile")
+    ret = RunMacro("Create Inputs Main", Args, Result)
+    Return(ret)
+EndMacro
+
+
+Macro "Run Java Model" (Args,Result)
+Attributes:
+   Macro.[Position] = { 50, 390 }
+   Macro.[TextStyle] = "Center"
+Description:
+//    Run Java Model Description
+Data:
+	In({ Args.[File Base1] })  
+	In({ Args.[File Build1] })  
+	In({ Args.[File Base2] })  
+	In({ Args.[File Build2] })   
+	
+	Out({ Args.[File Out1] })
+	Out({ Args.[File Out2] })
+	Out({ Args.[File BaseProb1] })
+	Out({ Args.[File BaseProb2] })
+	Out({ Args.[File AptMode1] })
+	Out({ Args.[File AptMode2] })
+	Out({ Args.[File AptOrig1] })
+	Out({ Args.[File AptOrig2] })
+Body:
+    RunMacro("SetLibrary", "airportchoicecompile")
+    ret = RunMacro("Run Java Main", Args, Result)
+    Return(ret)
+EndMacro
+
+
+Macro "SetLibrary" (alt_ui)
+Body:
+    if alt_ui = null then Return(SetLibrary())
+    this_ui = GetInterface()
+    { drive , path , fname , ext } = SplitPath(this_ui)
+    that_ui = drive + path + alt_ui
+    if GetFileInfo(that_ui+".dbd") = null then do
+        ShowMessage("Cannot find UI: " + that_ui)
+        Return(false)
+        end
+    SetLibrary(that_ui)
+    Return(true)
+EndMacro
+
